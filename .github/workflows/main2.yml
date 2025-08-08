@@ -1,0 +1,31 @@
+name: RDP
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Create Windows User
+        run: New-LocalUser -Name "newuser" -Password (ConvertTo-SecureString "Duythanh123." -AsPlainText -Force) -AccountNeverExpires
+
+      - name: Grant Admin Rights
+        run: Add-LocalGroupMember -Group "Administrators" -Member "newuser"
+
+      - name: Enable Remote Desktop
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+      - name: Configure RDP auth
+        run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+
+      - name: Download cloudflared
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile cloudflared.exe
+
+      - name: Start Cloudflare Tunnel
+        run: |
+          Start-Process -NoNewWindow -FilePath "cloudflared.exe" -ArgumentList "tunnel --url tcp://localhost:3389"
+          Start-Sleep -Seconds 3600

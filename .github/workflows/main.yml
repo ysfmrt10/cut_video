@@ -36,7 +36,7 @@ jobs:
       - name: Process all videos in folder
         run: |
           mkdir output
-          python process.py input output
+          python main.py input output
 
       - name: Upload processed videos
         uses: actions/upload-artifact@v4

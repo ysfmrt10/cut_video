@@ -1,0 +1,45 @@
+name: Process Multiple Google Drive Folders
+
+on:
+  workflow_dispatch:
+
+jobs:
+  process_folder:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        folder_id:
+          - 1SUV2lwwVYUluFbIpqAfxlWN0xEBDGeMd
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install --upgrade gdown
+
+      - name: Download entire folder from Google Drive
+        run: |
+          mkdir input
+          cd input
+          gdown --folder "https://drive.google.com/drive/folders/${{ matrix.folder_id }}"
+
+      - name: Process all videos in folder
+        run: |
+          mkdir output
+          python process.py input output
+
+      - name: Upload processed videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-folder-${{ matrix.folder_id }}
+          path: output
